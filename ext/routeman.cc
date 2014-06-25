@@ -1,5 +1,12 @@
 #include "php_routeman.h"
-#include "src/router.h"
+#include "router.hpp"
+
+inline char *str_to_char(const std::string &str) {
+    const unsigned size = str.size();
+    char *result = new char [size + 1];
+    std::strcpy (result, str.c_str());
+    return result;
+}
 
 zend_object_handlers routeman_router_object_handlers;
 
@@ -7,17 +14,6 @@ struct routeman_router_object {
     zend_object std;
     routeman::router *router;
 };
-
-void routeman_router_free_storage(void *object TSRMLS_DC)
-{
-    routeman_router_object *obj = (routeman_router_object *)object;
-    delete obj->router;
-
-    zend_hash_destroy(obj->std.properties);
-    FREE_HASHTABLE(obj->std.properties);
-
-    efree(obj);
-}
 
 zend_object_value routeman_router_create_handler(zend_class_entry *class_type TSRMLS_DC)
 {
@@ -33,7 +29,7 @@ zend_object_value routeman_router_create_handler(zend_class_entry *class_type TS
 
     retval.handle = zend_objects_store_put(obj,
         (zend_objects_store_dtor_t) zend_objects_destroy_object,
-        routeman_router_free_storage,
+        (zend_objects_free_object_storage_t) zend_objects_free_object_storage,
         NULL TSRMLS_CC
     );
     retval.handlers = &routeman_router_object_handlers;
@@ -49,14 +45,51 @@ PHP_METHOD(Routeman_Router, __construct)
     obj->router = new routeman::router();
 }
 
-PHP_METHOD(Routeman_Router, handle)
+/**
+ * @param string $name
+ * @param string $path
+ */
+PHP_METHOD(Routeman_Router, add)
 {
+    char *name, *path;
+    int len;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &name, &len, &path, &len) == FAILURE) {
+        RETURN_NULL();
+    }
+    routeman_router_object *obj = (routeman_router_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+    obj->router->add_route(new routeman::route(name, path));
     RETURN_NULL();
+}
+
+PHP_METHOD(Routeman_Router, match)
+{
+    char *url;
+    int len;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &url, &len) == FAILURE) {
+        RETURN_NULL();
+    }
+    routeman_router_object *obj = (routeman_router_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+        auto route = obj->router->match(url);
+    if (route) {
+        zval *parameters;
+        ALLOC_INIT_ZVAL(parameters);
+        array_init(parameters);
+        for (auto &parameter : route->parameters) {
+            add_assoc_string(parameters, parameter.name.c_str(), str_to_char(parameter.value), 1);
+        }
+
+        array_init(return_value);
+        add_assoc_string(return_value, "name", str_to_char(route->name), 1);
+        add_assoc_zval(return_value, "parameters", parameters);
+    } else {
+        RETURN_NULL();
+    }
 }
 
 zend_function_entry routeman_methods[] = {
     PHP_ME(Routeman_Router, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Routeman_Router, handle,      NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Routeman_Router, add,         NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Routeman_Router, match,       NULL, ZEND_ACC_PUBLIC)
     {NULL, NULL, NULL}
 };
 
@@ -68,6 +101,7 @@ PHP_MINIT_FUNCTION(routeman)
     routeman_router_ce->create_object = routeman_router_create_handler;
     memcpy(&routeman_router_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
     routeman_router_object_handlers.clone_obj = NULL;
+
     return SUCCESS;
 }
 

@@ -1,0 +1,15 @@
+*
+!*.*
+*.lo*
+*.la
+*.so
+*.php
+*.m4
+!config.m4
+.deps
+config*
+Makefile*
+ltmain.sh
+build/
+autom4te.cache/
+.libs/

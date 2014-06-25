@@ -1,4 +1,1 @@
-.libs/
-.deps/
-*.lo
-*.la
+*.sublime-workspace
