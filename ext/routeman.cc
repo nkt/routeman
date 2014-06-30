@@ -1,5 +1,4 @@
 #include "php_routeman.h"
-#include "router.hpp"
 
 inline char *str_to_char(const std::string &str) {
     const unsigned size = str.size();
@@ -51,25 +50,27 @@ PHP_METHOD(Routeman_Router, __construct)
  */
 PHP_METHOD(Routeman_Router, add)
 {
-    char *name, *path;
+    char *name, *path, *method, *host;
+    bool is_secure = false;
     int len;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &name, &len, &path, &len) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
+        "ss|ssb", &name, &len, &path, &len, &method, &len, &host, &len, &is_secure) == FAILURE) {
         RETURN_NULL();
     }
     routeman_router_object *obj = (routeman_router_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-    obj->router->add_route(new routeman::route(name, path));
+    obj->router->add(new routeman::route(name, path, method, host, is_secure));
     RETURN_NULL();
 }
 
 PHP_METHOD(Routeman_Router, match)
 {
-    char *url;
+    char *url, *method;
     int len;
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &url, &len) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &url, &len, &method, &len) == FAILURE) {
         RETURN_NULL();
     }
     routeman_router_object *obj = (routeman_router_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-        auto route = obj->router->match(url);
+    auto route = obj->router->match(url, method);
     if (route) {
         zval *parameters;
         ALLOC_INIT_ZVAL(parameters);

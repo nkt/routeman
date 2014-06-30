@@ -8,5 +8,5 @@ if test $PHP_ROUTEMAN != "no"; then
     PHP_SUBST(ROUTEMAN_SHARED_LIBADD)
     PHP_ADD_LIBRARY(stdc++, 1, ROUTEMAN_SHARED_LIBADD)
     PHP_ADD_LIBRARY(boost_regex, 1, ROUTEMAN_SHARED_LIBADD)
-    PHP_NEW_EXTENSION(routeman, routeman.cc router.cpp utils.cpp, $ext_shared)
+    PHP_NEW_EXTENSION(routeman, routeman.cc src/router.cpp, $ext_shared)
 fi

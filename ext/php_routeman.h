@@ -12,6 +12,10 @@ extern "C" {
 #include "php.h"
 }
 
+#include <iostream>
+#include <cstring>
+#include "src/router.h"
+
 extern zend_module_entry vehicles_module_entry;
 #define phpext_vehicles_ptr &vehicles_module_entry;
 

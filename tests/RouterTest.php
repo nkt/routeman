@@ -6,7 +6,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $router = new \Routeman\Router();
         $router->add('users', '/users/{id}');
-        $match = $router->match('/users/1');
+        $match = $router->match('/users/1', 'GET');
 
         $this->assertNotNull($match);
         $this->assertSame('users', $match['name']);
@@ -14,15 +14,15 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             'id' => '1'
         ), $match['parameters']);
 
-        $this->assertNull($router->match('/'));
-        $this->assertNull($router->match('/users/1/'));
+        $this->assertNull($router->match('/', 'GET'));
+        $this->assertNull($router->match('/users/1/', 'GET'));
     }
 
     public function testPatternMatch()
     {
         $router = new \Routeman\Router();
         $router->add('post_by_tag', '/users/{i:id}/posts/{a:tag}');
-        $match = $router->match('/users/100500/posts/cpp');
+        $match = $router->match('/users/100500/posts/cpp', 'GET');
 
         $this->assertNotNull($match);
         $this->assertSame('post_by_tag', $match['name']);
@@ -31,6 +31,6 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             'tag' => 'cpp'
         ), $match['parameters']);
 
-        $this->assertNull($router->match('/users/foo/posts/c++'));
+        $this->assertNull($router->match('/users/foo/posts/c++', 'GET'));
     }
 }
